@@ -7,8 +7,7 @@ tasks:
     before: |
       bash /workspace/fusionauth-example-express-start-here/ports.sh
     command: |
-      echo "Waiting for the FusionAuth server to start up"
-      docker compose up
+      echo "Enter 'docker compose -up' to start the servers"
 
 ports:
   - port: 9011
