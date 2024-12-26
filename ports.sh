@@ -9,3 +9,4 @@ perl -pi -e 's#http://localhost:9011#$ENV{FUSIONAUTH_URL}#g' kickstart/kickstart
 perl -pi -e 's#http://localhost:9012#$ENV{FUSIONAUTH_9012_URL}#g' kickstart/kickstart.json
 perl -pi -e 's#http://localhost:3000#$ENV{REDIRECT_URL}#g' kickstart/kickstart.json
 perl -pi -e 's#http://localhost:8080#$ENV{FUSIONAUTH_8080}#g' kickstart/kickstart.json
+perl -pi -e 's#http://localhost:\{port\}#$ENV{FUSIONAUTH_8080}#g' kickstart/kickstart.json
