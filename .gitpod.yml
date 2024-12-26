@@ -4,7 +4,8 @@ tasks:
   # Start FusionAuth in Docker
   # ------------------------------------
   - name: docker-compose
-    
+    before: |
+      bash /workspace/fusionauth-example-express-start-here/ports.sh
     command: |
       echo "Waiting for the FusionAuth server to start up"
       docker compose up
