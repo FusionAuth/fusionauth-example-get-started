@@ -1,0 +1,53 @@
+image: 
+  file: Dockerfile
+
+tasks:
+
+  # ------------------------------------
+  # Start FusionAuth in Docker
+  # ------------------------------------
+  - name: cqlsh
+    env: 
+      DATABASE_URL: "jdbc:postgresql://localhost:5432/fusionauth"
+      DATABASE_ROOT_USERNAME: "gitpod"
+      DATABASE_ROOT_PASSWORD: "password"
+      FUSIONAUTH_APP_KICKSTART_FILE: "/workspace/fusionauth-example-express-start-here/kickstart/kickstart.json"
+      INSTALL_SEARCH: 1
+    before: |
+      bash /workspace/fusionauth-first-steps-launch/install.sh   
+      bash /workspace/fusionauth-first-steps-launch/ports.sh
+      pip3 install httpie 
+      mkdir ~gitpod/.config/httpie
+      cp .config/httpie/config.json ~gitpod/.config/httpie
+      fusionauth/bin/startup.sh
+      echo "Starting up the ChangeBank React application"
+      cd complete-application
+      npm install
+      npm run dev
+    command: |
+      echo "Waiting for the FusionAuth server to start up"
+      bash serverup.sh
+
+ports:
+  - port: 9011
+    onOpen: ignore
+    visibility: public
+  - port: 3000
+    onOpen: ignore
+    visibility: public
+  - port: 9012
+    onOpen: ignore
+    visibility: public
+  - port: 9020
+    onOpen: ignore
+    visibility: public
+  - port: 9021
+    onOpen: ignore
+    visibility: public
+  - port: 5432
+    onOpen: ignore
+    visibility: public
+
+vscode:
+  extensions:
+    - https://github.com/synedra/katapod/releases/download/0.1.4/katapod-0.1.4.vsix
