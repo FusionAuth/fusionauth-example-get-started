@@ -1,0 +1,33 @@
+image: 
+  file: Dockerfile
+
+tasks:
+
+  # ------------------------------------
+  # Start FusionAuth in Docker
+  # ------------------------------------
+  - name: docker-compose
+    
+    command: |
+      echo "Waiting for the FusionAuth server to start up"
+      docker compose up
+
+ports:
+  - port: 9011
+    onOpen: ignore
+    visibility: public
+  - port: 3000
+    onOpen: ignore
+    visibility: public
+  - port: 9012
+    onOpen: ignore
+    visibility: public
+  - port: 9020
+    onOpen: ignore
+    visibility: public
+  - port: 9021
+    onOpen: ignore
+    visibility: public
+  - port: 5432
+    onOpen: ignore
+    visibility: public
