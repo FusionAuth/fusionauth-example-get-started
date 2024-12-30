@@ -29,3 +29,18 @@ ports:
   - port: 5432
     onOpen: ignore
     visibility: public
+  - port: 1025
+    onOpen: ignore
+    visibility: public
+  - port: 1080
+    onOpen: ignore
+    visibility: public
+  - port: 9200
+    onOpen: ignore
+    visibility: public
+  - port: 9600
+    onOpen: ignore
+    visibility: public
+  - port: 33109
+    onOpen: ignore
+    visibility: public
