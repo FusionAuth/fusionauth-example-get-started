@@ -9,6 +9,9 @@ tasks:
       bash /workspace/fusionauth-example-express-start-here/ports.sh
       docker compose up
       gp preview `gp url 9011`
+  - name cmd-terminal
+    command: |
+      echo "Please wait for the startup process to finish"
 
 ports:
   - port: 9011
