@@ -33,8 +33,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      search:
-        condition: service_healthy
       mailcatcher:
         condition: service_healthy
     environment:
@@ -60,12 +58,9 @@ services:
 networks:
   db_net:
     driver: bridge
-  search_net:
-    driver: bridge
   mailcatcher_net:
     driver: bridge
 
 volumes:
   db_data:
   fusionauth_config:
-  search_data:
