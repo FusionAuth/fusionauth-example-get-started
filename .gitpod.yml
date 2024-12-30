@@ -5,9 +5,10 @@ tasks:
   # ------------------------------------
   - name: docker-compose
     command: |
-      gp open README.md
+      gp open GITPOD.md
       bash /workspace/fusionauth-example-express-start-here/ports.sh
       docker compose up
+      gp preview `gp url 9011`
 
 ports:
   - port: 9011
