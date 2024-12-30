@@ -10,9 +10,9 @@ tasks:
       docker compose up
   - name: terminal
     command: |
+      echo "Please wait for the administration screen to appear"
       bash /workspace/fusionauth-example-express-start-here/startup.sh
       gp preview `gp url 9011`
-      echo "Please wait for the administration screen to appear"
 
 ports:
   - port: 9011
