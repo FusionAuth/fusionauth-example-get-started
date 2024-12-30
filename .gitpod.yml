@@ -8,10 +8,10 @@ tasks:
       gp open GITPOD.md
       bash /workspace/fusionauth-example-express-start-here/ports.sh
       docker compose up
-      gp preview `gp url 9011`
-  - name cmd-terminal
+  - name: terminal
     command: |
-      echo "Please wait for the startup process to finish"
+      gp preview `gp url 9011`
+      echo "Please wait for the administration screen to appear"
 
 ports:
   - port: 9011
