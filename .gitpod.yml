@@ -4,10 +4,9 @@ tasks:
   # Start FusionAuth in Docker
   # ------------------------------------
   - name: docker-compose
-    before: |
-      bash /workspace/fusionauth-example-express-start-here/ports.sh
     command: |
-      echo "Enter 'docker compose -up' to start the servers"
+      bash /workspace/fusionauth-example-express-start-here/ports.sh
+      docker compose up
 
 ports:
   - port: 9011
