@@ -32,6 +32,7 @@ const fusionAuthURL = process.env.fusionAuthURL;
 const fusionAuthRedirectURL = process.env.fusionAuthRedirectURL
 
 // Validate the token signature, make sure it wasn't expired
+#tag::validateUser[]
 const validateUser = async (userTokenCookie: { access_token: string }) => {
   // Make sure the user is authenticated.
   if (!userTokenCookie || !userTokenCookie?.access_token) {
@@ -48,6 +49,7 @@ const validateUser = async (userTokenCookie: { access_token: string }) => {
     return false;
   }
 }
+#end::validateUser[]
 
 
 const getKey: GetPublicKeyOrSecret = async (header, callback) => {
