@@ -5,7 +5,7 @@ tasks:
   # ------------------------------------
   - name: docker-compose
     command: |
-      gp open GITPOD.md
+      gp open https://fusionauth.io/docs/get-started/start-here
       bash /workspace/fusionauth-example-express-start-here/ports.sh
       docker compose up
   - name: terminal
