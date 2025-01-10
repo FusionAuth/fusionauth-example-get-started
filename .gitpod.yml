@@ -5,7 +5,7 @@ tasks:
   # ------------------------------------
   - name: docker-compose
     command: |
-      gp preview https://fusionauth.dev/docs/get-started/start-here#delegate-authentication
+      gp preview https://fusionauth.dev/docs/get-started/start-here#launch-fusionauth
       bash /workspace/fusionauth-example-express-start-here/ports.sh
       docker compose up
   - name: terminal
