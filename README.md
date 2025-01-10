@@ -4,7 +4,7 @@ This repo holds an example Express.js application that uses FusionAuth as the id
 This application will use an OAuth Authorization Code Grant workflow to log a user in and 
 get them access and refresh tokens.
 
-[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/synedra/fusionauth-example-express-start-here)
+[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/fusionauth/fusionauth-example-express-start-here)
 
 ## Project Contents
 
