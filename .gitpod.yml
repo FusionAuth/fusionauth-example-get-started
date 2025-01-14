@@ -5,7 +5,7 @@ tasks:
   # ------------------------------------
   - name: docker-compose
     command: |
-      gp preview https://fusionauth.io/docs/get-started/start-here#install-and-run-in-gitpod
+      gp open README.html
       bash /workspace/fusionauth-example-express-start-here/ports.sh
       docker compose up
   - name: terminal
