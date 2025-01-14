@@ -11,7 +11,7 @@ tasks:
   - name: terminal
     command: |
       bash /workspace/fusionauth-example-express-start-here/startup.sh
-      gp preview `gp url 9011`/admin --external
+      gp preview `gp url 9011`/admin
 
 ports:
   - port: 9011
