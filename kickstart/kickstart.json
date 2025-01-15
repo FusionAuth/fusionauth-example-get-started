@@ -81,8 +81,8 @@
             "favoriteColor": "chartreuse"
           },
           "email": "#{adminEmail}",
-          "firstName": "Dinesh",
-          "lastName": "Chugtai",
+          "firstName": "Admin",
+          "lastName": "Example",
           "password": "#{adminPassword}"
         }
       }
@@ -94,8 +94,8 @@
         "user": {
           "birthDate": "1985-11-23",
           "email": "#{userEmail}",
-          "firstName": "Fred",
-          "lastName": "Flintstone",
+          "firstName": "Richard",
+          "lastName": "Hendricks",
           "password": "#{userPassword}"
         },
         "registration": {
