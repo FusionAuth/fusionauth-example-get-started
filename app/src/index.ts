@@ -91,26 +91,23 @@ app.get("/", async (req, res) => {
 });
 //end::homepage[]
 
-
 app.get('/login', (req, res, next) => {
   const userSessionCookie = req.cookies[userSession];
 
-  // Cookie was cleared, just send back (hacky way)
   if (!userSessionCookie?.stateValue || !userSessionCookie?.challenge) {
     res.redirect(302, '/');
   }
 //tag::login[]
   res.redirect(302, `${fusionAuthURL}/oauth2/authorize?client_id=${clientId}&`+
-    `scope=profile%20email%20openid&`+
-    `response_type=code&`+
-    `redirect_uri=http://localhost:${port}/oauth-redirect&`+
-    `state=${userSessionCookie?.stateValue}&`+
-    `code_challenge=${userSessionCookie?.challenge}&`+
-    `code_challenge_method=S256`)
+                    `scope=profile%20email%20openid&`+
+                    `response_type=code&`+
+                    `redirect_uri=http://localhost:${port}/oauth-redirect&`+
+                    `state=${userSessionCookie?.stateValue}&`+
+                    `code_challenge=${userSessionCookie?.challenge}&`+
+                    `code_challenge_method=S256`)
 //end::login[]
 });
 
-//tag::oauth-redirect[]
 app.get('/oauth-redirect', async (req, res, next) => {
   // Capture query params
   const stateFromFusionAuth = `${req.query?.state}`;
@@ -125,6 +122,7 @@ app.get('/oauth-redirect', async (req, res, next) => {
     return;
   }
 
+//tag::oauth-redirect[]
   try {
     // Exchange Auth Code and Verifier for Access Token
     const accessToken = (await client.exchangeOAuthCodeForAccessTokenUsingPKCE(authCode,
@@ -140,12 +138,12 @@ app.get('/oauth-redirect', async (req, res, next) => {
     res.cookie(userToken, accessToken, { httpOnly: true })
 
     // Exchange Access Token for User
-    const userResponse = (await client.retrieveUserUsingJWT(accessToken.access_token)).response;
-    if (!userResponse?.user) {
+    const userResponse = (await client.retrieveUserInfoFromAccessToken(accessToken.access_token)).response;
+    if (!userResponse) {
       console.error('Failed to get User from access token, redirecting home.');
       res.redirect(302, '/');
     }
-    res.cookie(userDetails, userResponse.user);
+    res.cookie(userDetails, userResponse);
 
     res.redirect(302, '/account');
   } catch (err: any) {
@@ -154,8 +152,8 @@ app.get('/oauth-redirect', async (req, res, next) => {
       error: err
     }))
   }
-});
 //end::oauth-redirect[]
+});
 
 //tag::account[]
 app.get("/account", async (req, res) => {

@@ -20,9 +20,6 @@ Note that GitPod does not allow pasting from the clipboard by default, but it wi
 
 In the terminal, to open the FusionAuth administrative UI:
 
-```
-gp preview `gp url 9011`
-```
 
 ## Starting the Start Here application
 
