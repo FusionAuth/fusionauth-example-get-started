@@ -28,7 +28,7 @@ gp preview `gp url 9011`
 
 In the terminal, to start the Start Here application:
 
-```
+```shell
 cd app
 npm install
 npm run dev

@@ -91,7 +91,7 @@ app.get("/", async (req, res) => {
 });
 //end::homepage[]
 
-//tag::login[]
+
 app.get('/login', (req, res, next) => {
   const userSessionCookie = req.cookies[userSession];
 
@@ -99,10 +99,16 @@ app.get('/login', (req, res, next) => {
   if (!userSessionCookie?.stateValue || !userSessionCookie?.challenge) {
     res.redirect(302, '/');
   }
-
-  res.redirect(302, `${fusionAuthURL}/oauth2/authorize?client_id=${clientId}&response_type=code&redirect_uri=${fusionAuthRedirectURL}/oauth-redirect&state=${userSessionCookie?.stateValue}&code_challenge=${userSessionCookie?.challenge}&code_challenge_method=S256`)
-});
+//tag::login[]
+  res.redirect(302, `${fusionAuthURL}/oauth2/authorize?client_id=${clientId}&`+
+    `scope=profile%20email%20openid&`+
+    `response_type=code&`+
+    `redirect_uri=http://localhost:${port}/oauth-redirect&`+
+    `state=${userSessionCookie?.stateValue}&`+
+    `code_challenge=${userSessionCookie?.challenge}&`+
+    `code_challenge_method=S256`)
 //end::login[]
+});
 
 //tag::oauth-redirect[]
 app.get('/oauth-redirect', async (req, res, next) => {
