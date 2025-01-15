@@ -2,6 +2,6 @@
     "workbench.startupEditor": "none",
     "workbench.editorAssociations": 
         {
-            "GITPOD.md": "vscode.markdown.preview.editor",
+            "README.md": "vscode.markdown.preview.editor",
         }
 }
