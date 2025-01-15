@@ -10,7 +10,11 @@ Click here to start the GitPod environment:
 
 ## GitPod Elements
 
+GitPod environments are free to use for people with GitHub, GitLab or BitBucket accounts, but their team does gather some demographic information.  The first time you use GitPod you will be asked to fill out a few forms with data, but once you've done that once you won't need to do it again.
+
 The GitPod environment has docker containers for the database, FusionAuth server, and an email server.  In any of the 'open' command lines listed below, you can add `--external` to the gp preview command to open the page in an external browser window.
+
+Note that GitPod does not allow pasting from the clipboard by default, but it will request your permission to perform that pasting, only once.
 
 ## Opening the Admin UI 
 
