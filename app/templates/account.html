@@ -1,14 +1,20 @@
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <title>FusionAuth Start Here Application | Account</title>
   <link rel="stylesheet" href="/static/css/changebank.css">
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const id = JSON.parse(decodeURIComponent(document.cookie.split("; ").find((row) => row.startsWith("id="))?.split("=")[1]));
+      document.querySelector('.header-email').innerHTML = `Welcome: ${id.given_name} (${id.email})`;
+    });
+  </script>
 </head>
 <body>
   <div id="page-container">
     <div id="page-header">
       <div id="logo-header">
-        <img src="https://fusionauth.io/cdn/samplethemes/changebank/changebank.svg" />
+        <img src="https://fusionauth.io/cdn/samplethemes/changebank/changebank.svg" alt="Changebank"/>
         <div class="h-row">
           <p class="header-email"></p>
           <a class="button-lg" href="/logout">Logout</a>
@@ -30,11 +36,6 @@
         </div>
       </div>
     </div>
-
-    <script>
-      // Snag cookie user data
-      const user = JSON.parse(decodeURIComponent(document.cookie.split('; ').filter(c => c.includes('userDetails')).at(0).split('=').at(-1)).replace('j:', ''))
-      document.querySelector('.header-email').innerHTML = user.email;
-    </script>
+  </div>
 </body>
 </html>

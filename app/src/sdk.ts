@@ -13,6 +13,7 @@ interface FusionAuthSDKConfiguration {
   clientSecret: string;
   enablePKCE: boolean;
   enableRefreshTokens: boolean;
+  idTokenCookieName: string;
   oauthIssuer: string;
   oauthPKCECookieName: string;
   oauthStateCookieName: string;
@@ -30,12 +31,13 @@ const DefaultConfiguration: FusionAuthSDKConfiguration = {
   clientSecret: '',
   enablePKCE: false,
   enableRefreshTokens: true,
+  idTokenCookieName: 'id',
   oauthIssuer: 'acme.com',
   oauthPKCECookieName: 'op',
   oauthStateCookieName: 'os',
   port: 8080,
   refreshTokenCookieName: 'rt',
-  scope: 'profile email openid'
+  scope: 'profile email openid offline_access',
 };
 
 export class FusionAuthSDK {
@@ -114,8 +116,9 @@ export class FusionAuthSDK {
 
   logInUser(accessToken: AccessToken, res: Response) {
     res.cookie(this.configuration.accessTokenCookieName, accessToken.access_token, { httpOnly: true });
+    res.cookie(this.configuration.idTokenCookieName, jose.decodeJwt(accessToken.id_token), { httpOnly: false });
 
-    if (this.configuration.enableRefreshTokens) {
+    if (this.configuration.enableRefreshTokens && accessToken.refresh_token) {
       res.cookie(this.configuration.refreshTokenCookieName, accessToken.refresh_token, { httpOnly: true });
     }
   }
@@ -129,6 +132,7 @@ export class FusionAuthSDK {
         `response_type=code&`+
         `redirect_uri=${this.getRedirectURI()}&`+
         `state=${state}`;
+    console.log(redirect);
     if (this.configuration.enablePKCE) {
       const pkcePair = pkceChallenge.default();
       res.cookie(this.configuration.oauthPKCECookieName, { verifier: pkcePair.code_verifier, challenge: pkcePair.code_challenge }, { httpOnly: true });
@@ -160,50 +164,54 @@ export class FusionAuthSDK {
    * @param req The request used to fetch the cookies from.
    * @param res The response used to store updated cookie values if needed.
    */
-  async userLoggedIn(req: Request, res: Response): Promise<any> {
+  async userLoggedIn(req: Request, res: Response): Promise<boolean> {
     let accessToken = req.cookies[this.configuration.accessTokenCookieName];
+    console.log(accessToken);
     if (!accessToken) {
-      return null;
+      return false;
     }
 
     try {
-      const { payload } = await jose.jwtVerify(accessToken, this.JWKS, {
+      await jose.jwtVerify(accessToken, this.JWKS, {
         issuer: this.configuration.oauthIssuer,
         audience: this.configuration.applicationId,
       });
-      return payload;
     } catch (e) {
       if (e instanceof jose.errors.JWTExpired) {
         // Refreshing is disabled, so the user is logged out
         if (!this.configuration.enableRefreshTokens) {
-          return null;
+          return false;
         }
 
         // Try refreshing and then calling again
         let refreshToken = req.cookies[this.configuration.refreshTokenCookieName];
         if (!refreshToken) {
-          return null;
+          return false;
         }
 
         let response = await this.refreshToken(refreshToken);
         if (!response) {
-          return null;
+          return false;
         }
 
         // Update the cookies making the assumption that they are both valid since we just got them from FusionAuth
         accessToken = response.access_token;
         res.cookie(this.configuration.accessTokenCookieName, accessToken, { httpOnly: true });
 
-        if (this.configuration.enableRefreshTokens) {
+        if (this.configuration.enableRefreshTokens && response.refresh_token) {
           refreshToken = response.refresh_token;
           res.cookie(this.configuration.refreshTokenCookieName, refreshToken, { httpOnly: true });
         }
 
-        return jose.decodeJwt(accessToken);
+        const payload = jose.decodeJwt(response.id_token);
+        console.log(payload);
+        res.cookie(this.configuration.idTokenCookieName, JSON.stringify(payload), { httpOnly: false });
       } else {
-        return null;
+        return false;
       }
     }
+
+    return true;
   }
 
   private getRedirectURI(): string {
