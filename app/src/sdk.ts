@@ -1,0 +1,227 @@
+import {type AccessToken, FusionAuthClient} from '@fusionauth/typescript-client';
+import {type Request, type Response} from 'express';
+import pkceChallenge from 'pkce-challenge';
+import * as crypto from 'crypto';
+import * as jose from 'jose';
+
+interface FusionAuthSDKConfiguration {
+  accessTokenCookieName: string;
+  apiKey: string;
+  applicationId: string;
+  baseURL: string;
+  clientId: string;
+  clientSecret: string;
+  enablePKCE: boolean;
+  enableRefreshTokens: boolean;
+  oauthIssuer: string;
+  oauthPKCECookieName: string;
+  oauthStateCookieName: string;
+  port?: number;
+  refreshTokenCookieName: string;
+  scope: string;
+}
+
+const DefaultConfiguration: FusionAuthSDKConfiguration = {
+  accessTokenCookieName: 'at',
+  apiKey: '',
+  applicationId: '',
+  baseURL: '',
+  clientId: '',
+  clientSecret: '',
+  enablePKCE: false,
+  enableRefreshTokens: true,
+  oauthIssuer: 'acme.com',
+  oauthPKCECookieName: 'op',
+  oauthStateCookieName: 'os',
+  port: 8080,
+  refreshTokenCookieName: 'rt',
+  scope: 'profile email openid'
+};
+
+export class FusionAuthSDK {
+  private client: FusionAuthClient;
+  private configuration: FusionAuthSDKConfiguration;
+  private readonly JWKS: any;
+
+  constructor(configuration: any) {
+    this.client = new FusionAuthClient(configuration.apiKey, configuration.baseURL);
+    this.configuration = {...DefaultConfiguration, ...configuration}; // Merge
+    this.JWKS = jose.createRemoteJWKSet(new URL(`${this.configuration.baseURL}/.well-known/jwks.json`));
+  }
+
+  handleOAuthLogoutRedirect(res: Response) {
+    res.clearCookie(this.configuration.accessTokenCookieName);
+    res.clearCookie(this.configuration.oauthPKCECookieName);
+    res.clearCookie(this.configuration.oauthStateCookieName);
+    res.clearCookie(this.configuration.refreshTokenCookieName);
+  }
+
+  async handleOAuthRedirect(req: Request): Promise<AccessToken | null> {
+    try {
+      // Ensure the OAuth redirect returned a code and state and the cookie exists
+      const oauthStateCookie = req.cookies[this.configuration.oauthStateCookieName];
+      if (!req.query?.code || !req.query?.state || !oauthStateCookie) {
+        console.error('No code/state returned from OAuth redirect or the state cookie is missing.');
+        return null;
+      }
+
+      // Capture query params
+      const stateFromFusionAuth = req.query.state.toString();
+      const authCode = req.query.code.toString();
+
+      // Validate cookie state matches FusionAuth's returned state
+      if (stateFromFusionAuth !== oauthStateCookie) {
+        console.error("State doesn't match. uh-oh.");
+        console.error(`Saw: ${stateFromFusionAuth} but expected: ${oauthStateCookie}`);
+        return null;
+      }
+
+      // Exchange Auth Code and Verifier for Access Token
+      let accessTokenResponse;
+      if (this.configuration.enablePKCE) {
+        const oauthPKCECookie = req.cookies[this.configuration.oauthPKCECookieName];
+        if (!oauthPKCECookie?.verifier) {
+          console.error('No PKCE verifier cookie found. This should not happen.');
+          return null;
+        }
+
+        accessTokenResponse = await this.client.exchangeOAuthCodeForAccessTokenUsingPKCE(
+            authCode,
+            this.configuration.clientId,
+            this.configuration.clientSecret,
+            this.getRedirectURI(),
+            oauthPKCECookie.verifier
+        );
+      } else {
+        accessTokenResponse = await this.client.exchangeOAuthCodeForAccessToken(
+            authCode,
+            this.configuration.clientId,
+            this.configuration.clientSecret,
+            this.getRedirectURI()
+        );
+      }
+
+      if (!accessTokenResponse.wasSuccessful() || !accessTokenResponse.response.access_token) {
+        console.error('Failed to get Access Token')
+        return null;
+      }
+
+      return accessTokenResponse.response;
+    } catch (err) {
+      return null;
+    }
+  }
+
+  logInUser(accessToken: AccessToken, res: Response) {
+    res.cookie(this.configuration.accessTokenCookieName, accessToken.access_token, { httpOnly: true });
+
+    if (this.configuration.enableRefreshTokens) {
+      res.cookie(this.configuration.refreshTokenCookieName, accessToken.refresh_token, { httpOnly: true });
+    }
+  }
+
+  sendToLoginPage(res: Response) {
+    const state = crypto.randomUUID();
+    res.cookie(this.configuration.oauthStateCookieName, state, { httpOnly: true });
+
+    let redirect = `${this.configuration.baseURL}/oauth2/authorize?client_id=${this.configuration.clientId}&`+
+        `scope=${encodeURIComponent(this.configuration.scope)}&`+
+        `response_type=code&`+
+        `redirect_uri=${this.getRedirectURI()}&`+
+        `state=${state}`;
+    if (this.configuration.enablePKCE) {
+      const pkcePair = pkceChallenge.default();
+      res.cookie(this.configuration.oauthPKCECookieName, { verifier: pkcePair.code_verifier, challenge: pkcePair.code_challenge }, { httpOnly: true });
+      redirect += `&code_challenge=${pkcePair.code_challenge}&code_challenge_method=S256`;
+    }
+
+    res.redirect(302, redirect);
+  }
+
+  /**
+   * Redirects the browser to the FusionAUth logout page.
+   *
+   * @param res The response that is used to send the redirect.
+   */
+  sendToLogoutPage(res: Response) {
+    res.redirect(302, `${this.configuration.baseURL}/oauth2/logout?client_id=${this.configuration.clientId}`);
+  }
+
+  /**
+   * This always returns true for now.
+   */
+  userHasAccess(): boolean {
+    return true;
+  }
+
+  /**
+   * Determines if the user is logged in or not. This leverages the access and refresh token cookies.
+   *
+   * @param req The request used to fetch the cookies from.
+   * @param res The response used to store updated cookie values if needed.
+   */
+  async userLoggedIn(req: Request, res: Response): Promise<any> {
+    let accessToken = req.cookies[this.configuration.accessTokenCookieName];
+    if (!accessToken) {
+      return null;
+    }
+
+    try {
+      const { payload } = await jose.jwtVerify(accessToken, this.JWKS, {
+        issuer: this.configuration.oauthIssuer,
+        audience: this.configuration.applicationId,
+      });
+      return payload;
+    } catch (e) {
+      if (e instanceof jose.errors.JWTExpired) {
+        // Refreshing is disabled, so the user is logged out
+        if (!this.configuration.enableRefreshTokens) {
+          return null;
+        }
+
+        // Try refreshing and then calling again
+        let refreshToken = req.cookies[this.configuration.refreshTokenCookieName];
+        if (!refreshToken) {
+          return null;
+        }
+
+        let response = await this.refreshToken(refreshToken);
+        if (!response) {
+          return null;
+        }
+
+        // Update the cookies making the assumption that they are both valid since we just got them from FusionAuth
+        accessToken = response.access_token;
+        res.cookie(this.configuration.accessTokenCookieName, accessToken, { httpOnly: true });
+
+        if (this.configuration.enableRefreshTokens) {
+          refreshToken = response.refresh_token;
+          res.cookie(this.configuration.refreshTokenCookieName, refreshToken, { httpOnly: true });
+        }
+
+        return jose.decodeJwt(accessToken);
+      } else {
+        return null;
+      }
+    }
+  }
+
+  private getRedirectURI(): string {
+    return `http://localhost:${this.configuration.port}/oauth-redirect`;
+  }
+
+  private async refreshToken(refreshToken: string): Promise<AccessToken | null> {
+    const response = await this.client.exchangeRefreshTokenForAccessToken(
+        refreshToken,
+        this.configuration.clientId,
+        this.configuration.clientSecret,
+        this.configuration.scope,
+        ''
+    );
+    if (!response.wasSuccessful()) {
+      return null;
+    }
+
+    return response.response;
+  }
+}
