@@ -3,12 +3,8 @@
   <meta charset="utf-8" />
   <title>FusionAuth Start Here Application | Make Change</title>
   <link rel="stylesheet" href="/static/css/changebank.css">
+  <script src="/static/js/FetchName-0.0.1.js" type="text/javascript"></script>
   <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      const id = JSON.parse(decodeURIComponent(document.cookie.split("; ").find((row) => row.startsWith("id="))?.split("=")[1]));
-      document.querySelector('.header-email').innerHTML = `Welcome: ${id.given_name} (${id.email})`;
-    });
-
     const makeChange = async (e) => {
       e.stopPropagation();
       e.preventDefault();

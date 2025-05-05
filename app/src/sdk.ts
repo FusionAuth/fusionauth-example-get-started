@@ -3,6 +3,7 @@ import {type Request, type Response} from 'express';
 import pkceChallenge from 'pkce-challenge';
 import * as crypto from 'crypto';
 import * as jose from 'jose';
+import type {JWTPayload} from "jose";
 
 interface FusionAuthSDKConfiguration {
   accessTokenCookieName: string;
@@ -116,7 +117,7 @@ export class FusionAuthSDK {
 
   logInUser(accessToken: AccessToken, res: Response) {
     res.cookie(this.configuration.accessTokenCookieName, accessToken.access_token, { httpOnly: true });
-    res.cookie(this.configuration.idTokenCookieName, jose.decodeJwt(accessToken.id_token), { httpOnly: false });
+    res.cookie(this.configuration.idTokenCookieName, JSON.stringify(jose.decodeJwt(accessToken.id_token)), { httpOnly: false });
 
     if (this.configuration.enableRefreshTokens && accessToken.refresh_token) {
       res.cookie(this.configuration.refreshTokenCookieName, accessToken.refresh_token, { httpOnly: true });
@@ -132,7 +133,6 @@ export class FusionAuthSDK {
         `response_type=code&`+
         `redirect_uri=${this.getRedirectURI()}&`+
         `state=${state}`;
-    console.log(redirect);
     if (this.configuration.enablePKCE) {
       const pkcePair = pkceChallenge.default();
       res.cookie(this.configuration.oauthPKCECookieName, { verifier: pkcePair.code_verifier, challenge: pkcePair.code_challenge }, { httpOnly: true });
@@ -152,10 +152,20 @@ export class FusionAuthSDK {
   }
 
   /**
-   * This always returns true for now.
+   * Checks if the user has the specified roles.
+   *
+   * @param jwt The JWT payload to check.
+   * @param roles The roles to check for.
+   * @returns True if the user has the specified roles, false otherwise.
    */
-  userHasAccess(): boolean {
-    return true;
+  userHasAccess(jwt: JWTPayload, roles: Array<string>): boolean {
+    // @ts-ignore
+    if (!jwt || !jwt.roles || jwt.roles.length === 0) {
+      return false;
+    }
+
+    // @ts-ignore
+    return jwt.roles.some(role => roles.includes(role));
   }
 
   /**
@@ -164,34 +174,34 @@ export class FusionAuthSDK {
    * @param req The request used to fetch the cookies from.
    * @param res The response used to store updated cookie values if needed.
    */
-  async userLoggedIn(req: Request, res: Response): Promise<boolean> {
+  async userLoggedIn(req: Request, res: Response): Promise<JWTPayload> {
     let accessToken = req.cookies[this.configuration.accessTokenCookieName];
-    console.log(accessToken);
     if (!accessToken) {
-      return false;
+      return null;
     }
 
+    let payload: JWTPayload;
     try {
-      await jose.jwtVerify(accessToken, this.JWKS, {
+      payload = (await jose.jwtVerify(accessToken, this.JWKS, {
         issuer: this.configuration.oauthIssuer,
         audience: this.configuration.applicationId,
-      });
+      })).payload;
     } catch (e) {
       if (e instanceof jose.errors.JWTExpired) {
         // Refreshing is disabled, so the user is logged out
         if (!this.configuration.enableRefreshTokens) {
-          return false;
+          return null;
         }
 
         // Try refreshing and then calling again
         let refreshToken = req.cookies[this.configuration.refreshTokenCookieName];
         if (!refreshToken) {
-          return false;
+          return null;
         }
 
         let response = await this.refreshToken(refreshToken);
         if (!response) {
-          return false;
+          return null;
         }
 
         // Update the cookies making the assumption that they are both valid since we just got them from FusionAuth
@@ -203,15 +213,14 @@ export class FusionAuthSDK {
           res.cookie(this.configuration.refreshTokenCookieName, refreshToken, { httpOnly: true });
         }
 
-        const payload = jose.decodeJwt(response.id_token);
-        console.log(payload);
+        payload = jose.decodeJwt(response.id_token);
         res.cookie(this.configuration.idTokenCookieName, JSON.stringify(payload), { httpOnly: false });
       } else {
-        return false;
+        return null;
       }
     }
 
-    return true;
+    return payload;
   }
 
   private getRedirectURI(): string {

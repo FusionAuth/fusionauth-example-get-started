@@ -60,18 +60,20 @@ app.get('/oauth-redirect', async (req, res) => {
 // Account page
 app.get("/account", async (req, res) => {
   const jwt = await sdk.userLoggedIn(req, res);
-  if (jwt && sdk.userHasAccess()) {
-    res.sendFile(path.join(__dirname, '../templates/account.html'));
+  if (!sdk.userHasAccess(jwt, ["admin", "user"])) {
+    res.redirect(302, '/');
     return;
   }
 
-  res.redirect(302, '/');
+  res.sendFile(path.join(__dirname, '../templates/account.html'));
 });
 
 // Make change page
 app.get("/make-change", async (req, res) => {
-  if (!await sdk.userLoggedIn(req, res)) {
+  const jwt = await sdk.userLoggedIn(req, res);
+  if (!sdk.userHasAccess(jwt, ["admin", "user"])) {
     res.redirect(302, '/');
+    return;
   }
 
   res.sendFile(path.join(__dirname, '../templates/make-change.html'));
@@ -79,7 +81,8 @@ app.get("/make-change", async (req, res) => {
 
 // Make change submit
 app.post("/make-change", async (req, res) => {
-  if (!await sdk.userLoggedIn(req, res)) {
+  const jwt = await sdk.userLoggedIn(req, res);
+  if (!sdk.userHasAccess(jwt, ["admin", "user"])) {
     res.status(403).json(JSON.stringify({
       error: 'Unauthorized'
     }))
@@ -111,6 +114,17 @@ app.post("/make-change", async (req, res) => {
     error,
     message
   }));
+});
+
+// Admin page
+app.get("/admin", async (req, res) => {
+  const jwt = await sdk.userLoggedIn(req, res);
+  if (!sdk.userHasAccess(jwt, ["admin"])) {
+    res.redirect(302, '/');
+    return;
+  }
+
+  res.sendFile(path.join(__dirname, '../templates/admin.html'));
 });
 
 // Logout redirect to FusionAuth
