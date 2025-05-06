@@ -59,9 +59,8 @@ app.get('/oauth-redirect', async (req, res) => {
 
 // Account page
 app.get("/account", async (req, res) => {
-  const jwt = await sdk.userLoggedIn(req, res);
-  if (!sdk.userHasAccess(jwt, ["admin", "user"])) {
-    res.redirect(302, '/');
+  if (!await sdk.userHasAccess(req, res, ["admin", "user"])) {
+    res.redirect(302, '/login');
     return;
   }
 
@@ -70,9 +69,8 @@ app.get("/account", async (req, res) => {
 
 // Make change page
 app.get("/make-change", async (req, res) => {
-  const jwt = await sdk.userLoggedIn(req, res);
-  if (!sdk.userHasAccess(jwt, ["admin", "user"])) {
-    res.redirect(302, '/');
+  if (!await sdk.userHasAccess(req, res, ["admin", "user"])) {
+    res.redirect(302, '/login');
     return;
   }
 
@@ -81,8 +79,7 @@ app.get("/make-change", async (req, res) => {
 
 // Make change submit
 app.post("/make-change", async (req, res) => {
-  const jwt = await sdk.userLoggedIn(req, res);
-  if (!sdk.userHasAccess(jwt, ["admin", "user"])) {
+  if (!await sdk.userHasAccess(req, res, ["admin", "user"])) {
     res.status(403).json(JSON.stringify({
       error: 'Unauthorized'
     }))
@@ -118,9 +115,8 @@ app.post("/make-change", async (req, res) => {
 
 // Admin page
 app.get("/admin", async (req, res) => {
-  const jwt = await sdk.userLoggedIn(req, res);
-  if (!sdk.userHasAccess(jwt, ["admin"])) {
-    res.redirect(302, '/');
+  if (!await sdk.userHasAccess(req, res, ["admin"])) {
+    res.redirect(302, '/account');
     return;
   }
 

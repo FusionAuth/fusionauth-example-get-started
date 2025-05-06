@@ -54,9 +54,67 @@ export class FusionAuthSDK {
 
   handleOAuthLogoutRedirect(res: Response) {
     res.clearCookie(this.configuration.accessTokenCookieName);
+    res.clearCookie(this.configuration.idTokenCookieName);
     res.clearCookie(this.configuration.oauthPKCECookieName);
     res.clearCookie(this.configuration.oauthStateCookieName);
     res.clearCookie(this.configuration.refreshTokenCookieName);
+  }
+
+  /**
+   * Locates the user's access token if one exists. This requires a user to be logged in, otherwise null is returned.
+   *
+   * @param req The request used to fetch the user cookies from.
+   * @param res The response used to store updated user cookie values if needed.
+   * @returns The user's information if one exists, null otherwise.
+   */
+  async getUser(req: Request, res: Response): Promise<JWTPayload> {
+    let accessToken = req.cookies[this.configuration.accessTokenCookieName];
+    if (!accessToken) {
+      return null;
+    }
+
+    let payload: JWTPayload;
+    try {
+      payload = (await jose.jwtVerify(accessToken, this.JWKS, {
+        issuer: this.configuration.oauthIssuer,
+        audience: this.configuration.applicationId,
+      })).payload;
+    } catch (e) {
+      if (e instanceof jose.errors.JWTExpired) {
+        // Refreshing is disabled, so the user is logged out
+        if (!this.configuration.enableRefreshTokens) {
+          return null;
+        }
+
+        // Load the refresh token from the cookie
+        let refreshToken = req.cookies[this.configuration.refreshTokenCookieName];
+        if (!refreshToken) {
+          return null;
+        }
+
+        // Try refreshing the token
+        let response = await this.refreshToken(refreshToken);
+        if (!response) {
+          return null;
+        }
+
+        // Update the cookies making the assumption that they are both valid since we just got them from FusionAuth
+        accessToken = response.access_token;
+        res.cookie(this.configuration.accessTokenCookieName, accessToken, { httpOnly: true });
+
+        if (this.configuration.enableRefreshTokens && response.refresh_token) {
+          refreshToken = response.refresh_token;
+          res.cookie(this.configuration.refreshTokenCookieName, refreshToken, { httpOnly: true });
+        }
+
+        payload = jose.decodeJwt(response.id_token);
+        res.cookie(this.configuration.idTokenCookieName, JSON.stringify(payload), { httpOnly: false });
+      } else {
+        return null;
+      }
+    }
+
+    return payload;
   }
 
   async handleOAuthRedirect(req: Request): Promise<AccessToken | null> {
@@ -154,11 +212,14 @@ export class FusionAuthSDK {
   /**
    * Checks if the user has the specified roles.
    *
-   * @param jwt The JWT payload to check.
+   * @param req The request used to fetch the user cookies from.
+   * @param res The response used to store updated user cookie values if needed.
    * @param roles The roles to check for.
    * @returns True if the user has the specified roles, false otherwise.
    */
-  userHasAccess(jwt: JWTPayload, roles: Array<string>): boolean {
+  async userHasAccess(req: Request, res: Response, roles: Array<string>): Promise<boolean> {
+    const jwt = await this.getUser(req, res);
+
     // @ts-ignore
     if (!jwt || !jwt.roles || jwt.roles.length === 0) {
       return false;
@@ -169,58 +230,14 @@ export class FusionAuthSDK {
   }
 
   /**
-   * Determines if the user is logged in or not. This leverages the access and refresh token cookies.
+   * Checks if the user is logged in.
    *
-   * @param req The request used to fetch the cookies from.
-   * @param res The response used to store updated cookie values if needed.
+   * @param req The request used to fetch the user cookies from.
+   * @param res The response used to store updated user cookie values if needed.
+   * @returns True if the user is logged in, false otherwise.
    */
-  async userLoggedIn(req: Request, res: Response): Promise<JWTPayload> {
-    let accessToken = req.cookies[this.configuration.accessTokenCookieName];
-    if (!accessToken) {
-      return null;
-    }
-
-    let payload: JWTPayload;
-    try {
-      payload = (await jose.jwtVerify(accessToken, this.JWKS, {
-        issuer: this.configuration.oauthIssuer,
-        audience: this.configuration.applicationId,
-      })).payload;
-    } catch (e) {
-      if (e instanceof jose.errors.JWTExpired) {
-        // Refreshing is disabled, so the user is logged out
-        if (!this.configuration.enableRefreshTokens) {
-          return null;
-        }
-
-        // Try refreshing and then calling again
-        let refreshToken = req.cookies[this.configuration.refreshTokenCookieName];
-        if (!refreshToken) {
-          return null;
-        }
-
-        let response = await this.refreshToken(refreshToken);
-        if (!response) {
-          return null;
-        }
-
-        // Update the cookies making the assumption that they are both valid since we just got them from FusionAuth
-        accessToken = response.access_token;
-        res.cookie(this.configuration.accessTokenCookieName, accessToken, { httpOnly: true });
-
-        if (this.configuration.enableRefreshTokens && response.refresh_token) {
-          refreshToken = response.refresh_token;
-          res.cookie(this.configuration.refreshTokenCookieName, refreshToken, { httpOnly: true });
-        }
-
-        payload = jose.decodeJwt(response.id_token);
-        res.cookie(this.configuration.idTokenCookieName, JSON.stringify(payload), { httpOnly: false });
-      } else {
-        return null;
-      }
-    }
-
-    return payload;
+  async userLoggedIn(req: Request, res: Response): Promise<boolean> {
+    return await this.getUser(req, res) !== null;
   }
 
   private getRedirectURI(): string {
