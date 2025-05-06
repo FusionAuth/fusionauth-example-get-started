@@ -1,5 +1,5 @@
 // @ts-check
-const { test, expect } = require('@playwright/test');
+import { test, expect } from '@playwright/test';
 
 test('has title', async ({ page }) => {
   await page.goto('http://localhost:8080/');
@@ -48,7 +48,6 @@ test('log in', async ({ page }) => {
 
   // Expect to see the user's email on the page
   await expect(page.getByText('richard@example.com')).toBeVisible();
-
 });
 
 test('log in failure', async ({ page }) => {
@@ -65,6 +64,5 @@ test('log in failure', async ({ page }) => {
 
   // Expect to see the user's email on the page
   await expect(page.getByText('Invalid login credentials.')).toBeVisible();
-
 });
 
