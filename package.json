@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "node --watch --experimental-strip-types src/index.mts"
   },
-  "author": "Alex Patterson",
+  "author": "Brian Pontarelli",
   "license": "Apache-2.0",
   "type": "module",
   "engines" : {
