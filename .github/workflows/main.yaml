@@ -21,10 +21,12 @@ jobs:
       - run: npm ci
 
       # Build
-      - uses: actions/checkout@v4
+      - name: Checkout out the example kickstarts
+        uses: actions/checkout@v4
         with:
           repository: FusionAuth/fusionauth-example-kickstart
-      - name: Copy our kickstart file over so it gets picked up
+          path: fusionauth-example-kickstart
+      - name: Symlink to the Get Started kickstart
         run: ln -s fusionauth-example-kickstart/get-started kickstart
       - name: Start FusionAuth
         uses: fusionauth/fusionauth-github-action@v1
