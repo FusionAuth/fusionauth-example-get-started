@@ -52,6 +52,7 @@ export class FusionAuthSDK {
     this.JWKS = jose.createRemoteJWKSet(new URL(`${this.configuration.baseURL}/.well-known/jwks.json`));
   }
 
+  // tag::handleOAuthLogoutRedirect
   handleOAuthLogoutRedirect(res: Response) {
     res.clearCookie(this.configuration.accessTokenCookieName);
     res.clearCookie(this.configuration.idTokenCookieName);
@@ -59,6 +60,7 @@ export class FusionAuthSDK {
     res.clearCookie(this.configuration.oauthStateCookieName);
     res.clearCookie(this.configuration.refreshTokenCookieName);
   }
+  // end::handleOAuthLogoutRedirect
 
   /**
    * Locates the user's access token if one exists. This requires a user to be logged in, otherwise null is returned.
@@ -144,6 +146,7 @@ export class FusionAuthSDK {
     }
   }
 
+  // tag::logInUser
   logInUser(accessToken: AccessToken, res: Response) {
     res.cookie(this.configuration.accessTokenCookieName, accessToken.access_token, { httpOnly: true });
     res.cookie(this.configuration.idTokenCookieName, JSON.stringify(jose.decodeJwt(accessToken.id_token)), { httpOnly: false });
@@ -152,6 +155,7 @@ export class FusionAuthSDK {
       res.cookie(this.configuration.refreshTokenCookieName, accessToken.refresh_token, { httpOnly: true });
     }
   }
+  // end::logInUser
 
   sendToLoginPage(res: Response) {
     const state = crypto.randomUUID();
@@ -176,9 +180,11 @@ export class FusionAuthSDK {
    *
    * @param res The response that is used to send the redirect.
    */
+  // tag::sendToLogoutPage
   sendToLogoutPage(res: Response) {
     res.redirect(302, `${this.configuration.baseURL}/oauth2/logout?client_id=${this.configuration.clientId}`);
   }
+  // end::sendToLogoutPage
 
   /**
    * Checks if the user has the specified roles.
@@ -232,6 +238,7 @@ export class FusionAuthSDK {
     return response.response;
   }
 
+  // tag::handleJWTException
   private async handleJWTException(req: Request, res: Response, e: Error): Promise<JWTPayload | null> {
     let payload = null;
     if (e instanceof jose.errors.JWTExpired) {
@@ -267,4 +274,5 @@ export class FusionAuthSDK {
 
     return payload;
   }
+  // tag::handleJWTException
 }

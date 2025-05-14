@@ -130,15 +130,19 @@ app.get("/admin", async (req, res) => {
 // end::admin
 
 // Logout redirect to FusionAuth
+// tag::logout
 app.get('/logout', (_req, res) => {
   sdk.sendToLogoutPage(res);
 });
+// end::logout
 
 // OAuth logout return
+// tag::oauth2-logout
 app.get('/oauth2/logout', (_req, res) => {
   sdk.handleOAuthLogoutRedirect(res);
   res.redirect(302, '/')
 });
+// end::oauth2-logout
 
 // Start the Express server
 app.listen(port, () => {
