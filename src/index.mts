@@ -62,12 +62,10 @@ app.get('/oauth-redirect', async (req, res) => {
 // Account page
 // tag::account
 app.get("/account", async (req, res) => {
-  // tag::account-userHasAccess
   if (!await sdk.userHasAccess(req, res, ["admin", "user"])) {
     res.redirect(302, '/login');
     return;
   }
-  // end::account-userHasAccess
 
   res.sendFile(path.join(__dirname, '../templates/account.html'));
 });
@@ -120,6 +118,7 @@ app.post("/make-change", async (req, res) => {
 });
 
 // Admin page
+// tag::admin
 app.get("/admin", async (req, res) => {
   if (!await sdk.userHasAccess(req, res, ["admin"])) {
     res.redirect(302, '/account');
@@ -128,6 +127,7 @@ app.get("/admin", async (req, res) => {
 
   res.sendFile(path.join(__dirname, '../templates/admin.html'));
 });
+// end::admin
 
 // Logout redirect to FusionAuth
 app.get('/logout', (_req, res) => {
