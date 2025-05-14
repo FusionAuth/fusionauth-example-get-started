@@ -60,14 +60,18 @@ app.get('/oauth-redirect', async (req, res) => {
 });
 
 // Account page
+// tag::account
 app.get("/account", async (req, res) => {
+  // tag::account-userHasAccess
   if (!await sdk.userHasAccess(req, res, ["admin", "user"])) {
     res.redirect(302, '/login');
     return;
   }
+  // end::account-userHasAccess
 
   res.sendFile(path.join(__dirname, '../templates/account.html'));
 });
+// end::account
 
 // Make change page
 app.get("/make-change", async (req, res) => {

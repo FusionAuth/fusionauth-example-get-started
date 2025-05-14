@@ -217,6 +217,7 @@ export class FusionAuthSDK {
    * @param roles The roles to check for.
    * @returns True if the user has the specified roles, false otherwise.
    */
+  // tag::userHasAccess
   async userHasAccess(req: Request, res: Response, roles: Array<string>): Promise<boolean> {
     const jwt = await this.getUser(req, res);
 
@@ -228,6 +229,7 @@ export class FusionAuthSDK {
     // @ts-ignore
     return jwt.roles.some(role => roles.includes(role));
   }
+  // end::userHasAccess
 
   /**
    * Checks if the user is logged in.
