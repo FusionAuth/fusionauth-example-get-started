@@ -274,5 +274,5 @@ export class FusionAuthSDK {
 
     return payload;
   }
-  // tag::handleJWTException
+  // end::handleJWTException
 }
