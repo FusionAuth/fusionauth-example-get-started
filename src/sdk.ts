@@ -67,6 +67,7 @@ export class FusionAuthSDK {
    * @param res The response used to store updated user cookie values if needed.
    * @returns The user's information if one exists, null otherwise.
    */
+  // tag::getUser
   async getUser(req: Request, res: Response): Promise<JWTPayload> {
     let accessToken = req.cookies[this.configuration.accessTokenCookieName];
     if (!accessToken) {
@@ -80,42 +81,12 @@ export class FusionAuthSDK {
         audience: this.configuration.applicationId,
       })).payload;
     } catch (e) {
-      if (e instanceof jose.errors.JWTExpired) {
-        // Refreshing is disabled, so the user is logged out
-        if (!this.configuration.enableRefreshTokens) {
-          return null;
-        }
-
-        // Load the refresh token from the cookie
-        let refreshToken = req.cookies[this.configuration.refreshTokenCookieName];
-        if (!refreshToken) {
-          return null;
-        }
-
-        // Try refreshing the token
-        let response = await this.refreshToken(refreshToken);
-        if (!response) {
-          return null;
-        }
-
-        // Update the cookies making the assumption that they are both valid since we just got them from FusionAuth
-        accessToken = response.access_token;
-        res.cookie(this.configuration.accessTokenCookieName, accessToken, { httpOnly: true });
-
-        if (response.refresh_token) {
-          refreshToken = response.refresh_token;
-          res.cookie(this.configuration.refreshTokenCookieName, refreshToken, { httpOnly: true });
-        }
-
-        payload = jose.decodeJwt(response.id_token);
-        res.cookie(this.configuration.idTokenCookieName, JSON.stringify(payload), { httpOnly: false });
-      } else {
-        return null;
-      }
+      payload = await this.handleJWTException(req, res, e);
     }
 
     return payload;
   }
+  // end::getUser
 
   async handleOAuthRedirect(req: Request): Promise<AccessToken | null> {
     try {
@@ -259,5 +230,41 @@ export class FusionAuthSDK {
     }
 
     return response.response;
+  }
+
+  private async handleJWTException(req: Request, res: Response, e: Error): Promise<JWTPayload | null> {
+    let payload = null;
+    if (e instanceof jose.errors.JWTExpired) {
+      // Refreshing is disabled, so the user is logged out
+      if (!this.configuration.enableRefreshTokens) {
+        return null;
+      }
+
+      // Load the refresh token from the cookie
+      let refreshToken = req.cookies[this.configuration.refreshTokenCookieName];
+      if (!refreshToken) {
+        return null;
+      }
+
+      // Try refreshing the token
+      let response = await this.refreshToken(refreshToken);
+      if (!response) {
+        return null;
+      }
+
+      // Update the cookies making the assumption that they are both valid since we just got them from FusionAuth
+      let accessToken = response.access_token;
+      res.cookie(this.configuration.accessTokenCookieName, accessToken, { httpOnly: true });
+
+      if (response.refresh_token) {
+        refreshToken = response.refresh_token;
+        res.cookie(this.configuration.refreshTokenCookieName, refreshToken, { httpOnly: true });
+      }
+
+      payload = jose.decodeJwt(response.id_token);
+      res.cookie(this.configuration.idTokenCookieName, JSON.stringify(payload), { httpOnly: false });
+    }
+
+    return payload;
   }
 }
