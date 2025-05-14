@@ -102,7 +102,7 @@ export class FusionAuthSDK {
         accessToken = response.access_token;
         res.cookie(this.configuration.accessTokenCookieName, accessToken, { httpOnly: true });
 
-        if (this.configuration.enableRefreshTokens && response.refresh_token) {
+        if (response.refresh_token) {
           refreshToken = response.refresh_token;
           res.cookie(this.configuration.refreshTokenCookieName, refreshToken, { httpOnly: true });
         }

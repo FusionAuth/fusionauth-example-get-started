@@ -35,6 +35,7 @@ app.get("/", async (_req, res) => {
 });
 
 // Login route
+// tag::login
 app.get('/login', async (req, res) => {
   if (await sdk.userLoggedIn(req, res)) {
     res.redirect(302, '/account');
@@ -43,6 +44,7 @@ app.get('/login', async (req, res) => {
 
   sdk.sendToLoginPage(res);
 });
+// end::login
 
 // OAuth return route
 app.get('/oauth-redirect', async (req, res) => {
