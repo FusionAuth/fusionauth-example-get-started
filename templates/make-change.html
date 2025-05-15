@@ -1,14 +1,32 @@
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <title>FusionAuth Start Here Application | Make Change</title>
   <link rel="stylesheet" href="/static/css/changebank.css">
+  <script src="/static/js/FetchName-0.0.1.js" type="text/javascript"></script>
+  <script>
+    const makeChange = async (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+
+      const resp = await (await fetch('/make-change', {
+        method: 'POST',
+        body: new URLSearchParams(new FormData(e.currentTarget)),
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      })).json();
+      const result = JSON.parse(resp);
+      result.error ? document.querySelector('.error-message').innerHTML = result.error : document.querySelector('.error-message').innerHTML = '';
+      document.querySelector('.change-message').innerHTML = result.message;
+    }
+  </script>
 </head>
 <body>
   <div id="page-container">
     <div id="page-header">
       <div id="logo-header">
-        <img src="https://fusionauth.io/cdn/samplethemes/changebank/changebank.svg" />
+        <img src="https://fusionauth.io/cdn/samplethemes/changebank/changebank.svg" alt="Changebank"/>
         <div class="h-row">
           <p class="header-email"></p>
           <a class="button-lg" href="/logout">Logout</a>
@@ -39,26 +57,6 @@
         </div>
       </div>
     </div>
-
-    <script>
-      // Snag cookie user data
-      const user = JSON.parse(decodeURIComponent(document.cookie.split('; ').filter(c => c.includes('userDetails')).at(0).split('=').at(-1)).replace('j:', ''))
-      document.querySelector('.header-email').innerHTML = user.email;
-
-      const makeChange = async (e) => {
-        e.preventDefault();
-
-        const resp = await (await fetch('/make-change', {
-          method: 'POST',
-          body: new URLSearchParams(new FormData(e.currentTarget)),
-          headers: {
-              "Content-Type": "application/x-www-form-urlencoded",
-          },
-        })).json();
-        const result = JSON.parse(resp);
-        result.error ? document.querySelector('.error-message').innerHTML = result.error : document.querySelector('.error-message').innerHTML = '';
-        document.querySelector('.change-message').innerHTML = result.message;
-      }
-    </script>
+  </div>
 </body>
 </html>
