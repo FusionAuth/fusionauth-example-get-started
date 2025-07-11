@@ -1,7 +1,7 @@
 {
-  "name": "fusionauth-quickstart-javascript-express-web",
+  "name": "fusionauth-example-get-started",
   "version": "1.0.0",
-  "description": "Example of setting up an express application with typescript.",
+  "description": "A TypeScript application integrated with FusionAuth, with login, logout, session management, and protected pages.",
   "scripts": {
     "dev": "node --watch --experimental-strip-types src/index.mts"
   },
