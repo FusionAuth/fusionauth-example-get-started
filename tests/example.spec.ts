@@ -8,14 +8,12 @@ test('has title', async ({ page }) => {
   await expect(page).toHaveTitle(/FusionAuth Start Here Application | Home/);
 });
 
-// tag::fa-has-title
 test('FA has title', async ({ page }) => {
   await page.goto('http://localhost:9011/admin');
 
   // Expect a title "to contain" a substring.
   await expect(page).toHaveTitle(/Login | FusionAuth/);
 });
-// end::fa-has-title
 
 test('FA has title with redirect', async ({ page }) => {
   await page.goto('http://localhost:8080/');
@@ -26,7 +24,6 @@ test('FA has title with redirect', async ({ page }) => {
   await expect(page).toHaveTitle(/Login | FusionAuth/);
 });
 
-// tag::log-in
 test('log in', async ({ page }) => {
   // #1
   await page.goto('http://localhost:8080/');
@@ -56,7 +53,6 @@ test('log in', async ({ page }) => {
   // #7
   await expect(page.getByText('richard@example.com')).toBeVisible();
 });
-// end::log-in
 
 test('log in failure', async ({ page }) => {
   await page.goto('http://localhost:8080/');
@@ -73,4 +69,3 @@ test('log in failure', async ({ page }) => {
   // Expect to see the user's email on the page
   await expect(page.getByText('Invalid login credentials.')).toBeVisible();
 });
-

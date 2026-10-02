@@ -35,7 +35,6 @@ app.get("/", async (_req, res) => {
 });
 
 // Login route
-// tag::login
 app.get('/login', async (req, res) => {
   if (await sdk.userLoggedIn(req, res)) {
     res.redirect(302, '/account');
@@ -44,7 +43,6 @@ app.get('/login', async (req, res) => {
 
   sdk.sendToLoginPage(res);
 });
-// end::login
 
 // OAuth return route
 app.get('/oauth-redirect', async (req, res) => {
@@ -60,7 +58,6 @@ app.get('/oauth-redirect', async (req, res) => {
 });
 
 // Account page
-// tag::account
 app.get("/account", async (req, res) => {
   if (!await sdk.userHasAccess(req, res, ["admin", "user"])) {
     res.redirect(302, '/login');
@@ -69,7 +66,6 @@ app.get("/account", async (req, res) => {
 
   res.sendFile(path.join(__dirname, '../templates/account.html'));
 });
-// end::account
 
 // Make change page
 app.get("/make-change", async (req, res) => {
@@ -118,7 +114,6 @@ app.post("/make-change", async (req, res) => {
 });
 
 // Admin page
-// tag::admin
 app.get("/admin", async (req, res) => {
   if (!await sdk.userHasAccess(req, res, ["admin"])) {
     res.redirect(302, '/account');
@@ -127,22 +122,17 @@ app.get("/admin", async (req, res) => {
 
   res.sendFile(path.join(__dirname, '../templates/admin.html'));
 });
-// end::admin
 
 // Logout redirect to FusionAuth
-// tag::logout
 app.get('/logout', (_req, res) => {
   sdk.sendToLogoutPage(res);
 });
-// end::logout
 
 // OAuth logout return
-// tag::oauth2-logout
 app.get('/oauth2/logout', (_req, res) => {
   sdk.handleOAuthLogoutRedirect(res);
   res.redirect(302, '/')
 });
-// end::oauth2-logout
 
 // Start the Express server
 app.listen(port, () => {
